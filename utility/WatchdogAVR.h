@@ -12,7 +12,7 @@ public:
     // just a suggestion and a lower value might be picked if the hardware does
     // not support the exact desired value.
     //
-    // The actual period (in milliseconds) before a watchdog timer reset is 
+    // The actual period (in milliseconds) before a watchdog timer reset is
     // returned.
     int enable(int maxPeriodMS = 0);
 
@@ -26,15 +26,19 @@ public:
     // desired period of time.  The passed in period (in milliseconds) is
     // just a suggestion and a lower value might be picked if the hardware does
     // not support the exact desired value
-    //  
+    //
     // The actual period (in milliseconds) that the hardware was asleep will be
     // returned.
     int sleep(int maxPeriodMS = 0);
 
+    // low-level preparation of watchdog timer
+    // FIX: uint8_t won't compile here
+    void setup(unsigned char wdps);
 private:
+
     // Pick the closest (but not higher) watchdog timer value from the provided
     // maximum period.  Sets wdto to the chosen period value suitable for
-    // passing to wdt_enable(), and actualMS to the chosen period value in 
+    // passing to wdt_enable(), and actualMS to the chosen period value in
     // milliseconds.  A max value of 0 will pick the longest value possible.
     void _setPeriod(int maxMS, int &wdto, int &actualMS);
 

@@ -37,6 +37,31 @@ void WatchdogAVR::disable() {
     _wdto = -1;
 }
 
+
+#if defined (__AVR_ATtiny85__)
+#define _WDTCR WDTCR
+#else
+#define _WDTCR WDTCSR
+#endif
+
+void WatchdogAVR::setup(uint8_t wdps)
+{
+  // The next section is timing critical so interrupts are disabled.
+  cli();
+  // First clear any previous watchdog reset.
+  MCUSR &= ~(1<<WDRF);
+  // Now change the watchdog prescaler and interrupt enable bit so the watchdog
+  // reset only triggers the interrupt (and wakes from deep sleep) and not a
+  // full device reset.  This is a timing critical section of code that must
+  // happen in 4 cycles.
+  _WDTCR |= (1<<WDCE) | (1<<WDE);  // Set WDCE and WDE to enable changes.
+  _WDTCR = wdps;                   // Set the prescaler bit values.
+  _WDTCR |= (1<<WDIE);             // Enable only watchdog interrupts.
+  // Critical section finished, re-enable interrupts.
+  sei();
+}
+
+
 int WatchdogAVR::sleep(int maxPeriodMS) {
     // Pick the closest appropriate watchdog timer value.
     int sleepWDTO, actualMS;
@@ -48,19 +73,7 @@ int WatchdogAVR::sleep(int maxPeriodMS) {
                    ((sleepWDTO & 0x02 ? 1 : 0) << WDP1) |
                    ((sleepWDTO & 0x01 ? 1 : 0) << WDP0);
 
-    // The next section is timing critical so interrupts are disabled.
-    cli();
-    // First clear any previous watchdog reset.
-    MCUSR &= ~(1<<WDRF);
-    // Now change the watchdog prescaler and interrupt enable bit so the watchdog
-    // reset only triggers the interrupt (and wakes from deep sleep) and not a 
-    // full device reset.  This is a timing critical section of code that must 
-    // happen in 4 cycles.
-    WDTCSR |= (1<<WDCE) | (1<<WDE);  // Set WDCE and WDE to enable changes.
-    WDTCSR = wdps;                   // Set the prescaler bit values.
-    WDTCSR |= (1<<WDIE);             // Enable only watchdog interrupts.
-    // Critical section finished, re-enable interrupts.
-    sei();
+    setup(wdps);
 
     // Set full power-down sleep mode and go to sleep.
     set_sleep_mode(SLEEP_MODE_PWR_DOWN);
@@ -82,7 +95,7 @@ int WatchdogAVR::sleep(int maxPeriodMS) {
 }
 
 void WatchdogAVR::_setPeriod(int maxMS, int &wdto, int &actualMS) {
-    // Note the order of these if statements from highest to lowest  is 
+    // Note the order of these if statements from highest to lowest  is
     // important so that control flow cascades down to the right value based
     // on its position in the range of discrete timeouts.
     if ((maxMS >= 8000) || (maxMS == 0)) {
