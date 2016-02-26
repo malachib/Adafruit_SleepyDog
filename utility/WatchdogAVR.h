@@ -33,7 +33,7 @@ public:
 
     // low-level preparation of watchdog timer
     // FIX: uint8_t won't compile here
-    void setup(unsigned char wdps);
+    static void setup(unsigned char wdps);
 private:
 
     // Pick the closest (but not higher) watchdog timer value from the provided
