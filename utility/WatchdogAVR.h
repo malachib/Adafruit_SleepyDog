@@ -34,13 +34,18 @@ public:
     // low-level preparation of watchdog timer
     // FIX: uint8_t won't compile here
     static void setup(unsigned char wdps);
+
+    static unsigned char convertWDTOtoWDPS(int sleepWDTO);
+
+    // sleep for already-specified period
+    static void sleepPreset();
 private:
 
     // Pick the closest (but not higher) watchdog timer value from the provided
     // maximum period.  Sets wdto to the chosen period value suitable for
     // passing to wdt_enable(), and actualMS to the chosen period value in
     // milliseconds.  A max value of 0 will pick the longest value possible.
-    void _setPeriod(int maxMS, int &wdto, int &actualMS);
+    static void _setPeriod(int maxMS, int &wdto, int &actualMS);
 
     // Keep the last selected watchdog timer period so that the watchdog can be
     // re-enabled at that rate after sleep.  A value of -1 means no watchdog

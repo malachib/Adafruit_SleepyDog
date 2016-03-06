@@ -62,28 +62,58 @@ void WatchdogAVR::setup(uint8_t wdps)
 }
 
 
+// sleepWDTO comes from here:
+// http://www.nongnu.org/avr-libc/user-manual/group__avr__watchdog.html
+// WDPS = Watchdog prescalar
+inline uint8_t WatchdogAVR::convertWDTOtoWDPS(int sleepWDTO)
+{
+#if defined (__AVR_ATtiny85__)
+    // 0=16ms, 1=32ms,2=64ms,3=128ms,4=250ms,5=500ms
+    // 6=1 sec,7=2 sec, 8=4 sec, 9= 8sec
+    const uint8_t ii = sleepWDTO;
+    uint8_t bb;
+
+    //if (ii > 9 ) ii=9;
+    bb=ii & 7;
+    if (ii > 7) bb|= (1<<5);
+    bb|= (1<<WDCE);
+    return bb;
+#else
+    // Build watchdog prescaler register value before timing critical code.
+    uint8_t wdps = ((sleepWDTO & 0x08 ? 1 : 0) << WDP3) |
+                   ((sleepWDTO & 0x04 ? 1 : 0) << WDP2) |
+                   ((sleepWDTO & 0x02 ? 1 : 0) << WDP1) |
+                   ((sleepWDTO & 0x01 ? 1 : 0) << WDP0);
+    return wdps;
+#endif
+}
+
+
+inline void WatchdogAVR::sleepPreset()
+{
+  // Set full power-down sleep mode and go to sleep.
+  set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+  sleep_mode();
+
+  // Chip is now asleep!
+
+  // Once awakened by the watchdog execution resumes here.  Start by disabling
+  // sleep.
+  sleep_disable();
+}
+
+
 int WatchdogAVR::sleep(int maxPeriodMS) {
     // Pick the closest appropriate watchdog timer value.
     int sleepWDTO, actualMS;
     _setPeriod(maxPeriodMS, sleepWDTO, actualMS);
 
     // Build watchdog prescaler register value before timing critical code.
-    uint8_t wdps = ((sleepWDTO & 0x08 ? 1 : 0) << WDP3) |
-                   ((sleepWDTO & 0x04 ? 1 : 0) << WDP2) |
-                   ((sleepWDTO & 0x02 ? 1 : 0) << WDP1) |
-                   ((sleepWDTO & 0x01 ? 1 : 0) << WDP0);
+    uint8_t wdps = convertWDTOtoWDPS();
 
     setup(wdps);
 
-    // Set full power-down sleep mode and go to sleep.
-    set_sleep_mode(SLEEP_MODE_PWR_DOWN);
-    sleep_mode();
-
-    // Chip is now asleep!
-
-    // Once awakened by the watchdog execution resumes here.  Start by disabling
-    // sleep.
-    sleep_disable();
+    sleepPreset();
 
     // Check if the user had the watchdog enabled before sleep and re-enable it.
     if (_wdto != -1) {
