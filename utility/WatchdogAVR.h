@@ -31,11 +31,14 @@ public:
     // returned.
     int sleep(int maxPeriodMS = 0);
 
-    // low-level preparation of watchdog timer
+    // low-level preparation of watchdog timer [prescalar]
     // FIX: uint8_t won't compile here
     static void setup(unsigned char wdps);
 
     static unsigned char convertWDTOtoWDPS(int sleepWDTO);
+
+    // low-level preparation of watchdog timer
+    static void setupPreset(unsigned char wdto);
 
     // sleep for already-specified period
     static void sleepPreset();

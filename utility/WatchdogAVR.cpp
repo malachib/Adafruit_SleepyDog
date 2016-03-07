@@ -44,7 +44,7 @@ void WatchdogAVR::disable() {
 #define _WDTCR WDTCSR
 #endif
 
-void WatchdogAVR::setup(uint8_t wdps)
+inline void WatchdogAVR::setup(uint8_t wdps)
 {
   // The next section is timing critical so interrupts are disabled.
   cli();
@@ -103,13 +103,20 @@ inline void WatchdogAVR::sleepPreset()
 }
 
 
+void WatchdogAVR::setupPreset(uint8_t wdto)
+{
+  uint8_t wdps = convertWDTOtoWDPS(wdto);
+  setup(wdps);
+}
+
+
 int WatchdogAVR::sleep(int maxPeriodMS) {
     // Pick the closest appropriate watchdog timer value.
     int sleepWDTO, actualMS;
     _setPeriod(maxPeriodMS, sleepWDTO, actualMS);
 
     // Build watchdog prescaler register value before timing critical code.
-    uint8_t wdps = convertWDTOtoWDPS();
+    uint8_t wdps = convertWDTOtoWDPS(sleepWDTO);
 
     setup(wdps);
 
