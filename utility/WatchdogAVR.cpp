@@ -89,7 +89,7 @@ inline uint8_t WatchdogAVR::convertWDTOtoWDPS(int sleepWDTO)
 }
 
 
-inline void WatchdogAVR::sleepPreset()
+void WatchdogAVR::sleepPreset()
 {
   // Set full power-down sleep mode and go to sleep.
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);
